@@ -30,10 +30,21 @@ public class SeamCarver {
 
     // energy of pixel at column x and row y
     public double energy(int x, int y) {
+        validateCoordinates(x, y);
         if (isEdgePixel(x, y)) {
             return BORDER_ENERGY;
         }
         return 0;
+    }
+
+    private void validateCoordinates(int x, int y) {
+        if (!isValidCoordinates(x, y)) {
+            throw new IndexOutOfBoundsException();
+        }
+    }
+
+    private boolean isValidCoordinates(int x, int y) {
+        return x >= 0 && x < w && y >= 0 && y < h;
     }
 
     private boolean isEdgePixel(int x, int y) {
