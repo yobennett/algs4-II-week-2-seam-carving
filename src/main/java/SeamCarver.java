@@ -1,5 +1,7 @@
 public class SeamCarver {
 
+    private static final double BORDER_ENERGY = 195075.0;
+
     private final Picture picture;
     private final int w;
     private final int h;
@@ -28,7 +30,14 @@ public class SeamCarver {
 
     // energy of pixel at column x and row y
     public double energy(int x, int y) {
+        if (isEdgePixel(x, y)) {
+            return BORDER_ENERGY;
+        }
         return 0;
+    }
+
+    private boolean isEdgePixel(int x, int y) {
+        return x == 0 || y == 0 || x == w - 1 || y == h - 1;
     }
 
     // sequence of indices for horizontal seam
