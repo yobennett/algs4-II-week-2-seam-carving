@@ -1,3 +1,5 @@
+import java.awt.*;
+
 public class SeamCarver {
 
     private static final double BORDER_ENERGY = 195075.0;
@@ -34,7 +36,29 @@ public class SeamCarver {
         if (isEdgePixel(x, y)) {
             return BORDER_ENERGY;
         }
-        return 0;
+        return xGradientSquare(x, y) + yGradientSquare(x, y);
+    }
+
+    private double xGradientSquare(int x, int y) {
+        Color c1, c2;
+        c1 = picture.get(x - 1, y);
+        c2 = picture.get(x + 1, y);
+        return gradientSquare(c1, c2);
+    }
+
+    private double yGradientSquare(int x, int y) {
+        Color c1, c2;
+        c1 = picture.get(x, y - 1);
+        c2 = picture.get(x, y + 1);
+        return gradientSquare(c1, c2);
+    }
+
+    private double gradientSquare(Color c1, Color c2) {
+        int rCentralDiff, gCentralDiff, bCentralDiff;
+        rCentralDiff = Math.abs(c1.getRed() - c2.getRed());
+        gCentralDiff = Math.abs(c1.getGreen() - c2.getGreen());
+        bCentralDiff = Math.abs(c1.getBlue() - c2.getBlue());
+        return Math.pow(rCentralDiff, 2) + Math.pow(gCentralDiff, 2) + Math.pow(bCentralDiff, 2);
     }
 
     private void validateCoordinates(int x, int y) {
