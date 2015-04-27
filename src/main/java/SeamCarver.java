@@ -7,12 +7,14 @@ public class SeamCarver {
     private final Picture picture;
     private final int w;
     private final int h;
+    private final double[][] energies;
 
     // create a seam carver object based on the given picture
     public SeamCarver(Picture picture) {
         this.picture = picture;
         this.w = picture.width();
         this.h = picture.height();
+        this.energies = energies();
     }
 
     // current picture
@@ -73,6 +75,16 @@ public class SeamCarver {
 
     private boolean isEdgePixel(int x, int y) {
         return x == 0 || y == 0 || x == w - 1 || y == h - 1;
+    }
+
+    private double[][] energies() {
+        double[][] result = new double[w][h];
+        for (int x = 0; x < w; x++) {
+            for (int y = 0; y < h; y++) {
+                result[x][y] = energy(x, y);
+            }
+        }
+        return result;
     }
 
     // sequence of indices for horizontal seam
