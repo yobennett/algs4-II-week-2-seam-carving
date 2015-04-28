@@ -7,6 +7,7 @@ public class SeamCarver {
     private final Picture picture;
     private final int w;
     private final int h;
+    private final Color[][] colors;
     private final double[][] energies;
 
     // create a seam carver object based on the given picture
@@ -14,6 +15,7 @@ public class SeamCarver {
         this.picture = picture;
         this.w = picture.width();
         this.h = picture.height();
+        this.colors = colors(picture);
         this.energies = energies();
     }
 
@@ -43,15 +45,15 @@ public class SeamCarver {
 
     private double xGradientSquare(int x, int y) {
         Color c1, c2;
-        c1 = picture.get(x - 1, y);
-        c2 = picture.get(x + 1, y);
+        c1 = colors[y][x - 1];
+        c2 = colors[y][x + 1];
         return gradientSquare(c1, c2);
     }
 
     private double yGradientSquare(int x, int y) {
         Color c1, c2;
-        c1 = picture.get(x, y - 1);
-        c2 = picture.get(x, y + 1);
+        c1 = colors[y - 1][x];
+        c2 = colors[y + 1][x];
         return gradientSquare(c1, c2);
     }
 
@@ -69,6 +71,7 @@ public class SeamCarver {
         }
     }
 
+    // valid column x and row y
     private boolean isValidCoordinates(int x, int y) {
         return x >= 0 && x < w && y >= 0 && y < h;
     }
@@ -77,11 +80,21 @@ public class SeamCarver {
         return x == 0 || y == 0 || x == w - 1 || y == h - 1;
     }
 
+    private Color[][] colors(Picture p) {
+        Color[][] result = new Color[h][w];
+        for (int i = 0; i < h; i++) {
+            for (int j = 0; j < w; j++) {
+                result[i][j] = p.get(j, i);
+            }
+        }
+        return result;
+    }
+
     private double[][] energies() {
-        double[][] result = new double[w][h];
-        for (int x = 0; x < w; x++) {
-            for (int y = 0; y < h; y++) {
-                result[x][y] = energy(x, y);
+        double[][] result = new double[h][w];
+        for (int i = 0; i < h; i++) {
+            for (int j = 0; j < w; j++) {
+                result[i][j] = energy(j, i);
             }
         }
         return result;
@@ -103,7 +116,5 @@ public class SeamCarver {
     // remove vertical seam from current picture
     public void removeVerticalSeam(int[] seam) {}
 
-    public static void main(String[] args) {
-
-    }
+    public static void main(String[] args) {}
 }
