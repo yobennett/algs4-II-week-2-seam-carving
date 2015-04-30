@@ -98,16 +98,6 @@ public class SeamCarver {
         return result;
     }
 
-    private double[][] energies() {
-        double[][] result = new double[height()][width()];
-        for (int i = 0; i < height(); i++) {
-            for (int j = 0; j < width(); j++) {
-                result[i][j] = energy(j, i);
-            }
-        }
-        return result;
-    }
-
     private void transpose() {
         picture = new Picture(height(), width());
         colors = colors(picture);
