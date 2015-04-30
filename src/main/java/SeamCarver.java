@@ -4,16 +4,18 @@ public class SeamCarver {
 
     private static final double MAX_ENERGY = 195075.0;
 
-    private final Picture picture;
-    private final Color[][] colors;
+    private Picture picture;
+    private Color[][] colors;
     private double[] weights;
     private double[] distTo;
     private int[] edgeTo;
+    private boolean transposed;
 
     // create a seam carver object based on the given picture
     public SeamCarver(Picture picture) {
         this.picture = picture;
         this.colors = colors(picture);
+        this.transposed = false;
     }
 
     // current picture
@@ -29,6 +31,10 @@ public class SeamCarver {
     // height of current picture
     public int height() {
         return picture.height();
+    }
+
+    private boolean isTransposed() {
+        return transposed;
     }
 
     // energy of pixel at column x and row y
@@ -73,12 +79,6 @@ public class SeamCarver {
         return x >= 0 && x < width() && y >= 0 && y < height();
     }
 
-    private void validateVertex(int v) {
-        if (!isValidVertex(v)) {
-            throw new IndexOutOfBoundsException();
-        }
-    }
-
     // valid vertex v
     private boolean isValidVertex(int v) {
         return v >= 0 && v < (width() * height());
@@ -108,13 +108,29 @@ public class SeamCarver {
         return result;
     }
 
+    private void transpose() {
+        picture = new Picture(height(), width());
+        colors = colors(picture);
+        transposed = !transposed;
+    }
+
     // sequence of indices for horizontal seam
     public int[] findHorizontalSeam() {
-        return null;
+        if (!isTransposed()) {
+            transpose();
+        }
+        return findSeam();
     }
 
     // sequence of indices for vertical seam
     public int[] findVerticalSeam() {
+        if (isTransposed()) {
+            transpose();
+        }
+        return findSeam();
+    }
+
+    private int[] findSeam() {
 
         int size = width() * height();
 
@@ -142,10 +158,10 @@ public class SeamCarver {
         }
 
         // consider vertices in topological order
-            // start from each vertex in top row
+        // start from each vertex in top row
         // relax all edges pointing from that vertex
-            // downward edge from pixel (x, y) to pixels (x − 1, y + 1), (x, y + 1), and (x + 1, y + 1)
-            // precedence since all edges pointing downward
+        // downward edge from pixel (x, y) to pixels (x − 1, y + 1), (x, y + 1), and (x + 1, y + 1)
+        // precedence since all edges pointing downward
         for (int i = 0; i < height(); i++) {
             for (int j = 0; j < width(); j++) {
 
@@ -194,7 +210,6 @@ public class SeamCarver {
 
         return result;
     }
-
 
     // relax edge between vertexes v and w
     private void relax(int v, int w) {
