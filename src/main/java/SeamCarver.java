@@ -106,8 +106,17 @@ public class SeamCarver {
     }
 
     private void transpose() {
-        picture = new Picture(height(), width());
-        colors = colors(picture);
+        Picture tPicture = new Picture(height(), width());
+
+        Color[][] tColors = new Color[tPicture.height()][tPicture.width()];
+        for (int row = 0; row < tPicture.height(); row++) {
+            for (int col = 0; col < tPicture.width(); col++) {
+                tColors[row][col] = colors[col][row];
+            }
+        }
+
+        picture = tPicture;
+        colors = tColors;
         transposed = !transposed;
     }
 
@@ -184,6 +193,11 @@ public class SeamCarver {
             x = v % width();
             y = (int) Math.floor(v / (height() + 1));
             result[y] = x;
+        }
+
+        // revert transposition
+        if (isTransposed()) {
+            transpose();
         }
 
         return result;
