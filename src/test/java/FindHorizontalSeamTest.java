@@ -65,7 +65,7 @@ public class FindHorizontalSeamTest {
     public void horizontalSeamFor6x5() {
         SeamCarver seamCarver = new SeamCarver(picture6x5);
         int[] seam = seamCarver.findHorizontalSeam();
-        int[] expected = new int[] {1, 1, 1, 1, 1, 1};
+        int[] expected = new int[] {2, 3, 3, 3, 2, 1};
         for (int i = 0; i < expected.length; i++) {
             assertThat(seam[i], is(equalTo(expected[i])));
         }

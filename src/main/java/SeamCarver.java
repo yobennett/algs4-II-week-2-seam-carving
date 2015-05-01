@@ -46,6 +46,13 @@ public class SeamCarver {
         return xGradientSquare(x, y) + yGradientSquare(x, y);
     }
 
+    private double energy(int v) {
+        int x, y;
+        x = v % width();
+        y = (int) Math.floor(v / (height() + 1));
+        return energy(x, y);
+    }
+
     private double xGradientSquare(int x, int y) {
         Color c1, c2;
         c1 = colors[y][x - 1];
@@ -90,9 +97,9 @@ public class SeamCarver {
 
     private Color[][] colors(Picture p) {
         Color[][] result = new Color[height()][width()];
-        for (int i = 0; i < height(); i++) {
-            for (int j = 0; j < width(); j++) {
-                result[i][j] = p.get(j, i);
+        for (int row = 0; row < height(); row++) {
+            for (int col = 0; col < width(); col++) {
+                result[row][col] = p.get(col, row);
             }
         }
         return result;
@@ -129,22 +136,16 @@ public class SeamCarver {
         distTo = new double[size];
         edgeTo = new int[size];
 
-        for (int i = 0; i < height(); i++) {
-            for (int j = 0; j < width(); j++) {
+        for (int v = 0; v < size; v++) {
+            weights[v] = energy(v);
 
-                int index = coordinateToVertexIndex(j, i);
-
-                weights[index] = energy(j, i);
-
-                if (isFirstRow(i)) {
-                    distTo[index] = 0;
-                } else {
-                    distTo[index] = Double.POSITIVE_INFINITY;
-                }
-
-                edgeTo[index] = -1;
-
+            if (v < width()) {
+                distTo[v] = 0;
+            } else {
+                distTo[v] = Double.POSITIVE_INFINITY;
             }
+
+            edgeTo[v] = -1;
         }
 
         // consider vertices in topological order
@@ -152,26 +153,12 @@ public class SeamCarver {
         // relax all edges pointing from that vertex
         // downward edge from pixel (x, y) to pixels (x − 1, y + 1), (x, y + 1), and (x + 1, y + 1)
         // precedence since all edges pointing downward
-        for (int i = 0; i < height(); i++) {
-            for (int j = 0; j < width(); j++) {
+        for (int v = 0; v < size; v++) {
 
-                int v = coordinateToVertexIndex(j, i);
-                int w;
+            // bottom left, bottom, and bottom right
+            int[] edges = new int[] { v + width() - 1, v + width(), v + width() + 1};
 
-                // bottom left
-                w = coordinateToVertexIndex(j - 1, i + 1);
-                if (isValidVertex(w)) {
-                    relax(v, w);
-                }
-
-                // bottom
-                w = coordinateToVertexIndex(j, i + 1);
-                if (isValidVertex(w)) {
-                    relax(v, w);
-                }
-
-                // bottom right
-                w = coordinateToVertexIndex(j + 1, i + 1);
+            for (int w : edges) {
                 if (isValidVertex(w)) {
                     relax(v, w);
                 }
@@ -193,9 +180,10 @@ public class SeamCarver {
         // assemble shortest path
         int[] result = new int[height()];
         for (int v = lastVertex; v >= 0; v = edgeTo[v]) {
-            int row = (int) Math.floor(v / width());
-            int col = v % width();
-            result[row] = col;
+            int x, y;
+            x = v % width();
+            y = (int) Math.floor(v / (height() + 1));
+            result[y] = x;
         }
 
         return result;
