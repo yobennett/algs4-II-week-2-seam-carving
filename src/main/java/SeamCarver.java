@@ -48,11 +48,6 @@ public class SeamCarver {
         return xGradientSquare(col, row) + yGradientSquare(col, row);
     }
 
-    private double energy(int v) {
-        int[] coordinate = vertexToCoordinate(v);
-        return energy(coordinate[0], coordinate[1]);
-    }
-
     private double xGradientSquare(int x, int y) {
         Color c1, c2;
         c1 = colors[y][x - 1];
@@ -84,11 +79,6 @@ public class SeamCarver {
     // valid column x and row y
     private boolean isValidCoordinates(int x, int y) {
         return x >= 0 && x < width() && y >= 0 && y < height();
-    }
-
-    // valid vertex v
-    private boolean isValidVertex(int v) {
-        return v >= 0 && v < (width() * height());
     }
 
     private boolean isEdgePixel(int col, int row) {
@@ -141,9 +131,6 @@ public class SeamCarver {
         relaxEdges();
         int lastVertex = shortestPathLastVertex();
 
-//        System.out.println("\n before shortest path:");
-//        printStatus();
-
         int[] path = shortestPath(lastVertex);
 
         // revert transposition
@@ -171,18 +158,6 @@ public class SeamCarver {
         distTo = new double[size];
         edgeTo = new int[size];
 
-//        for (int v = 0; v < size; v++) {
-//            weights[v] = energy(v);
-//
-//            if (v < width()) {
-//                distTo[v] = weights[v];
-//            } else {
-//                distTo[v] = Double.POSITIVE_INFINITY;
-//            }
-//
-//            edgeTo[v] = -1;
-//        }
-
         for (int row = 0; row < height(); row++) {
             for (int col = 0; col < width(); col++) {
                 int v = coordinateToVertexIndex(col, row);
@@ -204,7 +179,6 @@ public class SeamCarver {
     // downward edge from pixel (x, y) to pixels (x − 1, y + 1), (x, y + 1), and (x + 1, y + 1)
     // precedence since all edges pointing downward
     private void relaxEdges() {
-
         for (int row = 0; row < height(); row++) {
             for (int col = 0; col < width(); col++) {
 
@@ -213,7 +187,6 @@ public class SeamCarver {
 
                 for (int w : adj) {
                     relax(v, w);
-//                    printStatus();
                 }
 
             }
@@ -252,13 +225,9 @@ public class SeamCarver {
 
     // relax edge between vertexes v and w
     private void relax(int v, int w) {
-//        System.out.println("\ntry to relax "+ v + " to " + w);
         if (distTo[w] > distTo[v] + weights[w]) {
-//            System.out.println("relaxing "+ v + " to " + w);
             distTo[w] = distTo[v] + weights[w];
             edgeTo[w] = v;
-        } else {
-//            System.out.println("no relax");
         }
     }
 
@@ -279,34 +248,18 @@ public class SeamCarver {
 
     // assemble shortest path
     private int[] shortestPath(int lastVertex) {
-        int[] result = new int[height()];
-        Stack<Integer> vertexes = new Stack<Integer>();
+        int[] path = new int[height()];
+        int col = height() - 1;
         for (int v = lastVertex; v >= 0; v = edgeTo[v]) {
-            vertexes.push(v);
+            path[col] = v % width();
+            col--;
         }
-
-        if (isTransposed()) {
-            int col = height() - 1;
-            for (int vertex : vertexes) {
-                result[col] = vertex % width();
-                col--;
-            }
-        } else {
-
-        }
-
-        return result;
+        return path;
     }
 
     // index for column and row
     private int coordinateToVertexIndex(int col, int row) {
         return (row * width()) + col;
-    }
-
-    private int[] vertexToCoordinate(int v) {
-        int col = v % width();
-        int row = (int) Math.floor(v / (height() + 1));
-        return new int[] {col, row};
     }
 
     // remove horizontal seam from current picture
