@@ -1,4 +1,6 @@
 import java.awt.*;
+import java.util.*;
+import java.util.Stack;
 
 public class SeamCarver {
 
@@ -37,20 +39,18 @@ public class SeamCarver {
         return transposed;
     }
 
-    // energy of pixel at column x and row y
-    public double energy(int x, int y) {
-        validateCoordinates(x, y);
-        if (isEdgePixel(x, y)) {
+    // energy of pixel at column and row
+    public double energy(int col, int row) {
+        validateCoordinates(col, row);
+        if (isEdgePixel(col, row)) {
             return MAX_ENERGY;
         }
-        return xGradientSquare(x, y) + yGradientSquare(x, y);
+        return xGradientSquare(col, row) + yGradientSquare(col, row);
     }
 
     private double energy(int v) {
-        int x, y;
-        x = v % width();
-        y = (int) Math.floor(v / (height() + 1));
-        return energy(x, y);
+        int[] coordinate = vertexToCoordinate(v);
+        return energy(coordinate[0], coordinate[1]);
     }
 
     private double xGradientSquare(int x, int y) {
@@ -77,7 +77,7 @@ public class SeamCarver {
 
     private void validateCoordinates(int x, int y) {
         if (!isValidCoordinates(x, y)) {
-            throw new IndexOutOfBoundsException();
+            throw new IndexOutOfBoundsException("x must be less than " + width() + " and y must be less than " + height());
         }
     }
 
@@ -91,8 +91,8 @@ public class SeamCarver {
         return v >= 0 && v < (width() * height());
     }
 
-    private boolean isEdgePixel(int x, int y) {
-        return x == 0 || y == 0 || x == width() - 1 || y == height() - 1;
+    private boolean isEdgePixel(int col, int row) {
+        return col == 0 || row == 0 || col == width() - 1 || row == height() - 1;
     }
 
     private Color[][] colors(Picture p) {
@@ -137,87 +137,176 @@ public class SeamCarver {
     }
 
     private int[] findSeam() {
+        findSeamInit();
+        relaxEdges();
+        int lastVertex = shortestPathLastVertex();
 
-        int size = width() * height();
+//        System.out.println("\n before shortest path:");
+//        printStatus();
 
-        // initialize
-        weights = new double[size];
-        distTo = new double[size];
-        edgeTo = new int[size];
-
-        for (int v = 0; v < size; v++) {
-            weights[v] = energy(v);
-
-            if (v < width()) {
-                distTo[v] = 0;
-            } else {
-                distTo[v] = Double.POSITIVE_INFINITY;
-            }
-
-            edgeTo[v] = -1;
-        }
-
-        // consider vertices in topological order
-        // start from each vertex in top row
-        // relax all edges pointing from that vertex
-        // downward edge from pixel (x, y) to pixels (x − 1, y + 1), (x, y + 1), and (x + 1, y + 1)
-        // precedence since all edges pointing downward
-        for (int v = 0; v < size; v++) {
-
-            // bottom left, bottom, and bottom right
-            int[] edges = new int[] { v + width() - 1, v + width(), v + width() + 1};
-
-            for (int w : edges) {
-                if (isValidVertex(w)) {
-                    relax(v, w);
-                }
-            }
-        }
-
-        // find shortest path
-        double min = Double.POSITIVE_INFINITY;
-        int i = height() - 1;
-        int lastVertex = -1;
-        for (int j = 0; j < width(); j++) {
-            int v = coordinateToVertexIndex(j, i);
-            if (min > distTo[v]) {
-                min = distTo[v];
-                lastVertex = v;
-            }
-        }
-
-        // assemble shortest path
-        int[] result = new int[height()];
-        for (int v = lastVertex; v >= 0; v = edgeTo[v]) {
-            int x, y;
-            x = v % width();
-            y = (int) Math.floor(v / (height() + 1));
-            result[y] = x;
-        }
+        int[] path = shortestPath(lastVertex);
 
         // revert transposition
         if (isTransposed()) {
             transpose();
         }
 
-        return result;
+        return path;
+    }
+
+    private void printStatus() {
+        System.out.println("w="+width()+", h="+height());
+        for (int j = 0; j < height(); j++) {
+            for (int i = 0; i < width(); i++) {
+                int v = coordinateToVertexIndex(i, j);
+                System.out.printf("%2d:%6.0f:%6.0f ", v, energy(i, j), (distTo[v] == Double.POSITIVE_INFINITY ? 0 : distTo[v]));
+            }
+            System.out.println();
+        }
+    }
+
+    private void findSeamInit() {
+        int size = width() * height();
+        weights = new double[size];
+        distTo = new double[size];
+        edgeTo = new int[size];
+
+//        for (int v = 0; v < size; v++) {
+//            weights[v] = energy(v);
+//
+//            if (v < width()) {
+//                distTo[v] = weights[v];
+//            } else {
+//                distTo[v] = Double.POSITIVE_INFINITY;
+//            }
+//
+//            edgeTo[v] = -1;
+//        }
+
+        for (int row = 0; row < height(); row++) {
+            for (int col = 0; col < width(); col++) {
+                int v = coordinateToVertexIndex(col, row);
+                weights[v] = energy(col, row);
+                edgeTo[v] = -1;
+                if (row == 0) {
+                    distTo[v] = weights[v];
+                } else {
+                    distTo[v] = Double.POSITIVE_INFINITY;
+                }
+            }
+        }
+
+    }
+
+    // consider vertices in topological order
+    // start from each vertex in top row
+    // relax all edges pointing from that vertex
+    // downward edge from pixel (x, y) to pixels (x − 1, y + 1), (x, y + 1), and (x + 1, y + 1)
+    // precedence since all edges pointing downward
+    private void relaxEdges() {
+
+        for (int row = 0; row < height(); row++) {
+            for (int col = 0; col < width(); col++) {
+
+                int v = coordinateToVertexIndex(col, row);
+                Iterable<Integer> adj = adj(col, row);
+
+                for (int w : adj) {
+                    relax(v, w);
+//                    printStatus();
+                }
+
+            }
+        }
+    }
+
+    private Iterable<Integer> adj(int col, int row) {
+        Stack<Integer> adj = new Stack<Integer>();
+
+        // bottom
+        int x = col;
+        int y = row + 1;
+        int w;
+        if (isValidCoordinates(x, y)) {
+            w = coordinateToVertexIndex(x, y);
+            adj.push(w);
+        }
+
+        // bottom left
+        x = col - 1;
+        y = row + 1;
+        if (isValidCoordinates(x, y)) {
+            w = coordinateToVertexIndex(x, y);
+            adj.push(w);
+        }
+
+        // bottom right
+        x = col + 1;
+        y = row + 1;
+        if (isValidCoordinates(x, y)) {
+            w = coordinateToVertexIndex(x, y);
+            adj.push(w);
+        }
+        return adj;
     }
 
     // relax edge between vertexes v and w
     private void relax(int v, int w) {
+//        System.out.println("\ntry to relax "+ v + " to " + w);
         if (distTo[w] > distTo[v] + weights[w]) {
+//            System.out.println("relaxing "+ v + " to " + w);
             distTo[w] = distTo[v] + weights[w];
             edgeTo[w] = v;
+        } else {
+//            System.out.println("no relax");
         }
     }
 
-    // index for column x and row y
-    private int coordinateToVertexIndex(int x, int y) {
-        return (y * width()) + x;
+    // find shortest path
+    private int shortestPathLastVertex() {
+        double min = Double.POSITIVE_INFINITY;
+        int lastRow = height() - 1;
+        int lastVertex = -1;
+        for (int col = 0; col < width(); col++) {
+            int v = coordinateToVertexIndex(col, lastRow);
+            if (min > distTo[v]) {
+                min = distTo[v];
+                lastVertex = v;
+            }
+        }
+        return lastVertex;
     }
 
-    private boolean isFirstRow(int j) {
-        return j == 0;
+    // assemble shortest path
+    private int[] shortestPath(int lastVertex) {
+        int[] result = new int[height()];
+        Stack<Integer> vertexes = new Stack<Integer>();
+        for (int v = lastVertex; v >= 0; v = edgeTo[v]) {
+            vertexes.push(v);
+        }
+
+        if (isTransposed()) {
+            int col = height() - 1;
+            for (int vertex : vertexes) {
+                result[col] = vertex % width();
+                col--;
+            }
+        } else {
+
+        }
+
+        return result;
+    }
+
+    // index for column and row
+    private int coordinateToVertexIndex(int col, int row) {
+        return (row * width()) + col;
+    }
+
+    private int[] vertexToCoordinate(int v) {
+        int col = v % width();
+        int row = (int) Math.floor(v / (height() + 1));
+        return new int[] {col, row};
     }
 
     // remove horizontal seam from current picture
