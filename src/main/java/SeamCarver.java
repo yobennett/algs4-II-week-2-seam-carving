@@ -22,17 +22,17 @@ public class SeamCarver {
 
     // current picture
     public Picture picture() {
-        return picture;
+        return new Picture(picture);
     }
 
     // width of current picture
     public int width() {
-        return picture.width();
+        return picture().width();
     }
 
     // height of current picture
     public int height() {
-        return picture.height();
+        return picture().height();
     }
 
     private boolean isTransposed() {
@@ -266,7 +266,37 @@ public class SeamCarver {
     public void removeHorizontalSeam(int[] seam) {}
 
     // remove vertical seam from current picture
-    public void removeVerticalSeam(int[] seam) {}
+    public void removeVerticalSeam(int[] seam) {
+        // init resized picture
+        int width = width() - 1;
+        int height = height();
+        Picture resizedPicture = new Picture(width, height);
+        Color[][] resizedColors = new Color[width][height];
+
+        // set each row to original row's Colors minus seam pixel
+        for (int row = 0; row < height(); row++) {
+            int seamCol = seam[row];
+
+            Color[] original = colors[row];
+            Color[] seamRemoved = new Color[width];
+
+            System.arraycopy(original, 0, seamRemoved, 0, seamCol);
+            System.arraycopy(original, seamCol + 1, seamRemoved, seamCol, width - seamCol);
+
+            resizedColors[row] = seamRemoved;
+
+            for (int col = 0; col < width; col++) {
+                resizedPicture.set(col, row, seamRemoved[col]);
+            }
+        }
+
+        // set picture and colors
+        picture = resizedPicture;
+        colors = resizedColors;
+
+        // save for debugging
+        picture.save("resized.png");
+    }
 
     public static void main(String[] args) {}
 }
