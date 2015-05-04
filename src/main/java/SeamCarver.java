@@ -1,5 +1,4 @@
-import java.awt.*;
-import java.util.*;
+import java.awt.Color;
 import java.util.Stack;
 
 public class SeamCarver {
@@ -67,12 +66,15 @@ public class SeamCarver {
         rCentralDiff = Math.abs(c1.getRed() - c2.getRed());
         gCentralDiff = Math.abs(c1.getGreen() - c2.getGreen());
         bCentralDiff = Math.abs(c1.getBlue() - c2.getBlue());
-        return Math.pow(rCentralDiff, 2) + Math.pow(gCentralDiff, 2) + Math.pow(bCentralDiff, 2);
+        return rCentralDiff * rCentralDiff
+                + gCentralDiff * gCentralDiff
+                + bCentralDiff * bCentralDiff;
     }
 
     private void validateCoordinates(int x, int y) {
         if (!isValidCoordinates(x, y)) {
-            throw new IndexOutOfBoundsException("x must be less than " + width() + " and y must be less than " + height());
+            throw new IndexOutOfBoundsException("x must be less than "
+                    + width() + " and y must be less than " + height());
         }
     }
 
@@ -147,7 +149,11 @@ public class SeamCarver {
         for (int j = 0; j < height(); j++) {
             for (int i = 0; i < width(); i++) {
                 int v = coordinateToVertexIndex(i, j);
-                System.out.printf("%2d:%6.0f:%6.0f ", v, energy(i, j), (distTo[v] == Double.POSITIVE_INFINITY ? 0 : distTo[v]));
+                double dist = distTo[v];
+                if (dist == Double.POSITIVE_INFINITY) {
+                    dist = 0;
+                }
+                System.out.printf("%2d:%6.0f:%6.0f ", v, energy(i, j), dist);
             }
             System.out.println();
         }
@@ -177,7 +183,8 @@ public class SeamCarver {
     // consider vertices in topological order
     // start from each vertex in top row
     // relax all edges pointing from that vertex
-    // downward edge from pixel (x, y) to pixels (x − 1, y + 1), (x, y + 1), and (x + 1, y + 1)
+    // downward edge from pixel (x, y) to pixels
+    // (x − 1, y + 1), (x, y + 1), and (x + 1, y + 1)
     // precedence since all edges pointing downward
     private void relaxEdges() {
         for (int row = 0; row < height(); row++) {
@@ -288,7 +295,8 @@ public class SeamCarver {
             Color[] seamRemoved = new Color[width];
 
             System.arraycopy(original, 0, seamRemoved, 0, seamCol);
-            System.arraycopy(original, seamCol + 1, seamRemoved, seamCol, width - seamCol);
+            System.arraycopy(original, seamCol + 1,
+                    seamRemoved, seamCol, width - seamCol);
 
             resizedColors[row] = seamRemoved;
 
@@ -302,5 +310,7 @@ public class SeamCarver {
         colors = resizedColors;
     }
 
-    public static void main(String[] args) {}
+    public static void main(String[] args) {
+
+    }
 }

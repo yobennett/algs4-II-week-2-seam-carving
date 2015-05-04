@@ -1,3 +1,3 @@
 #!/bin/sh
-findbugs-algs4 ./src/*.class
-checkstyle-algs4 ./src/*.java
+findbugs-algs4 ./src/main/java/*.class
+checkstyle-algs4 ./src/main/java/*.java
