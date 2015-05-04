@@ -102,6 +102,7 @@ public class SeamCarver {
         for (int row = 0; row < tPicture.height(); row++) {
             for (int col = 0; col < tPicture.width(); col++) {
                 tColors[row][col] = colors[col][row];
+                tPicture.set(col, row, tColors[row][col]);
             }
         }
 
@@ -263,7 +264,13 @@ public class SeamCarver {
     }
 
     // remove horizontal seam from current picture
-    public void removeHorizontalSeam(int[] seam) {}
+    public void removeHorizontalSeam(int[] seam) {
+        if (!isTransposed()) {
+            transpose();
+        }
+        removeVerticalSeam(seam);
+        transpose();
+    }
 
     // remove vertical seam from current picture
     public void removeVerticalSeam(int[] seam) {
@@ -271,10 +278,10 @@ public class SeamCarver {
         int width = width() - 1;
         int height = height();
         Picture resizedPicture = new Picture(width, height);
-        Color[][] resizedColors = new Color[width][height];
+        Color[][] resizedColors = new Color[height][width];
 
         // set each row to original row's Colors minus seam pixel
-        for (int row = 0; row < height(); row++) {
+        for (int row = 0; row < height; row++) {
             int seamCol = seam[row];
 
             Color[] original = colors[row];
@@ -293,9 +300,6 @@ public class SeamCarver {
         // set picture and colors
         picture = resizedPicture;
         colors = resizedColors;
-
-        // save for debugging
-        picture.save("resized.png");
     }
 
     public static void main(String[] args) {}
